@@ -1,0 +1,23 @@
+language: generic
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t khaberk/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true khaberk/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t khaberk/multi-client ./client
+  - docker build -t khaberk/multi-nginx ./nginx
+  - docker build -t khaberk/multi-server ./server
+  - docker build -t khaberk/multi-worker ./worker
+  # login to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # take those images and push them to docker hub
+  - docker push khaberk/multi-client
+  - docker push khaberk/multi-nginx
+  - docker push khaberk/multi-server
+  - docker push khaberk/multi-worker
